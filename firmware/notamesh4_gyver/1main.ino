@@ -1,4 +1,4 @@
-#if (IR_ON == 1) && (KOL_LED > IR_MAX_LEDS)
+#if (KOL_LED > IR_MAX_LEDS)
 #error "Значение KOL_LED должно быть меньше или равно IR_MAX_LEDS"
 #endif
 
@@ -8,43 +8,41 @@
 #define NOTAMESH_VERSION 103                                  // Just a continuation of seirlight and previously aalight.
 
 #include "FastLED.h"                                          // https://github.com/FastLED/FastLED
-#if   IR_ON == 1
 #include "EEPROM.h"                                           // This is included with base install
-#include "IRremote.h"                                         // 
-#endif
-#include "commands.h"                                         // The commands.
+//#include "IRremote.h"                                         // 
+
 
 #if FASTLED_VERSION < 3001000
 #error "Requires FastLED 3.1 or later; check github for latest code."
 #endif
 
-#if KEY_ON == 1                                                 //Для аналоговых кнопок
-int key_input = 0;                                            //Последнее нажатие кнопки
-int key_input_new;                                            //только что пришедьшее нажатие кнопки
-bool key_bounce = 0;                                          //для антидребезга
-uint32_t key_time;                                            //время последнего нажатия
-#endif
+//#if KEY_ON == 1                                                 //Для аналоговых кнопок
+//int key_input = 0;                                            //Последнее нажатие кнопки
+//int key_input_new;                                            //только что пришедьшее нажатие кнопки
+//bool key_bounce = 0;                                          //для антидребезга
+//uint32_t key_time;                                            //время последнего нажатия
+//#endif
 
-#if IR_ON == 1
-int RECV_PIN = PIN_IR;
-IRrecv irrecv(RECV_PIN);
-decode_results results;
-#endif
+//#if IR_ON == 1
+//int RECV_PIN = PIN_IR;
+//IRrecv irrecv(RECV_PIN);
+//decode_results results;
+//#endif
 
-#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
+//#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
 uint8_t  IR_New_Mode = 0;                                      //Выбор эффекта
 uint32_t IR_Time_Mode = 0;                                     //время последнего нажатия
-#endif
+//#endif
 
 // Serial definition
 #define SERIAL_BAUDRATE 57600                                 // Or 115200.
 
 // Fixed definitions cannot change on the fly.
-#if IR_ON == 1
+//#if IR_ON == 1
 #define MAX_LEDS IR_MAX_LEDS
-#else
-#define MAX_LEDS  KOL_LED
-#endif
+//#else
+//#define MAX_LEDS  KOL_LED
+//#endif
 
 // Initialize changeable global variables.
 #if MAX_LEDS < 255
@@ -107,7 +105,7 @@ uint8_t bgclr = 0;                                            // Общий цв
 uint8_t bgbri = 0;                                            // Общая фоновая яркость. Переменная для эффектов matrix_pal и one_sin_pal.
 bool    glitter = GLITER_ON;                                  // Флаг включения блеска
 bool    background = BACKGR_ON;                               // Флаг включения заполнения фона
-#if CANDLE_KOL >0
+#if CANDLE_KOL > 0
 bool    candle = CANDLE_ON;                                 // Флаг включения свечей
 #endif
 uint8_t palchg = 3;                                           // Управление палитрой  3 - менять палитру автоматически иначе нет
@@ -167,30 +165,35 @@ void demo_check();
 #include "fire.h"
 #include "candles.h"
 #include "colorwave.h"
-#include "getirl.h"
+//#include "getirl.h"
 #include "GyverButton.h"
+#include "commands.h"                                         // The commands.
 
 GButton btn(BTN_PIN);
+
+#include <SoftwareSerial.h>
+#define BT_RX 7
+#define BT_TX 8
+SoftwareSerial btSerial(BT_TX, BT_RX); // RX, TX
 
 /*------------------------------------------------------------------------------------------
   --------------------------------------- Start of code --------------------------------------
   ------------------------------------------------------------------------------------------*/
 void setup() {
 
-#if KEY_ON == 1
-  pinMode(PIN_KEY, INPUT);                                                        //Для аналоговых кнопок
-#endif
+//#if KEY_ON == 1
+//  pinMode(PIN_KEY, INPUT);                                                        //Для аналоговых кнопок
+//#endif
 
-#if LOG_ON == 1
+
   Serial.begin(SERIAL_BAUDRATE);                                                  // Setup serial baud rate
+  DBG_PRINTLN(F(" ")); DBG_PRINTLN(F("---SETTING UP---"));
 
-  Serial.println(F(" ")); Serial.println(F("---SETTING UP---"));
-#endif
   delay(1000);                                                                    // Slow startup so we can re-upload in the case of errors.
 
-#if IR_ON == 1
-  irrecv.enableIRIn();                                                          // Start the receiver
-#endif
+//#if IR_ON == 1
+//  irrecv.enableIRIn();                                                          // Start the receiver
+//#endif
 
   LEDS.setBrightness(max_bright);                                                 // Set the generic maximum brightness value.
 
@@ -210,7 +213,7 @@ void setup() {
   random16_add_entropy(analogRead(2));
 
 
-#if IR_ON == 1
+//#if IR_ON == 1
 
   ledMode = EEPROM.read(STARTMODE);
   // Location 0 is the starting mode.
@@ -239,16 +242,16 @@ void setup() {
     NUM_LEDS = INITLEN;
     meshdelay = INITDEL;
   }
-#else
-  ledMode = INITMODE;
-  NUM_LEDS = KOL_LED;
-  meshdelay = INITDEL;
-#endif
+//#else
+//  ledMode = INITMODE;
+//  NUM_LEDS = KOL_LED;
+//  meshdelay = INITDEL;
+//#endif
 
-#if LOG_ON == 1
-  Serial.print(F("Initial delay: ")); Serial.print(meshdelay * 100); Serial.println(F("ms delay."));
-  Serial.print(F("Initial strand length: ")); Serial.print(NUM_LEDS); Serial.println(F(" LEDs"));
-#endif
+
+  DBG_PRINT(F("Initial delay: ")); DBG_PRINT(meshdelay * 100); DBG_PRINTLN(F("ms delay."));
+  DBG_PRINT(F("Initial strand length: ")); DBG_PRINT(NUM_LEDS); DBG_PRINTLN(F(" LEDs"));
+
 
 #if BLACKSTART == 1
   solid = CRGB::Black;                 //Запуск с пустого поля
@@ -267,29 +270,35 @@ void setup() {
   gTargetPalette = gGradientPalettes[0];
   strobe_mode(ledMode, 1);                                                        // Initialize the first sequence
 
-#if LOG_ON == 1
+
   if (DEMO_MODE) {
-    Serial.print(F("DEMO MODE "));
-    Serial.println(DEMO_MODE);
+    DBG_PRINT(F("DEMO MODE "));
+    DBG_PRINTLN(DEMO_MODE);
   }
-  Serial.println(F("---SETUP COMPLETE---"));
-#endif
+  DBG_PRINTLN(F("---SETUP COMPLETE---"));
+
+  btSerial.begin(9600);
+
 } // setup()
 
 
 bool onFlag = true;
+
 //------------------MAIN LOOP---------------------------------------------------------------
 void loop() {
+  
+  bluetoothTick(); 
+  
 #if (USE_BTN == 1)
   static bool stepFlag = false;
   static bool brightDir = true;
   btn.tick();
-  if (btn.isSingle()) {
+  if (btn.isTriple()) {
     onFlag = !onFlag;
     FastLED.setBrightness(onFlag ? max_bright : 0);
     FastLED.show();
   }
-  if (btn.isDouble()) {
+  if (btn.isSingle()) {
 #if MY_MODE
     if (++tek_my_mode >= (my_mode_count - 1)) tek_my_mode = 0;
     newMode = pgm_read_byte(my_mode + tek_my_mode);
@@ -298,7 +307,7 @@ void loop() {
 #endif
     SetMode(newMode);
   }
-  if (btn.isTriple()) {
+  if (btn.isDouble()) {
 #if MY_MODE
     if (tek_my_mode <= 0) tek_my_mode = my_mode_count - 1;
     newMode = pgm_read_byte(my_mode + tek_my_mode);
@@ -322,9 +331,9 @@ void loop() {
   }
 #endif
 
-#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
-  getirl();                                                                   // Обработка команд с пульта и аналоговых кнопок
-#endif
+//#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
+//  getirl();                                                                   // Обработка команд с пульта и аналоговых кнопок
+//#endif
 
   if (onFlag) {
     demo_check();                                                                 // Работа если включен демонстрационный режим
@@ -343,9 +352,8 @@ void loop() {
         if (palchg == 3) {
           if (gCurrentPaletteNumber < (gGradientPaletteCount - 1))  gCurrentPaletteNumber++;
           else                                                    gCurrentPaletteNumber = 0;
-#if LOG_ON == 1
-          Serial.print(F("New Palette: "));  Serial.println(gCurrentPaletteNumber);
-#endif
+          
+          DBG_PRINT(F("New Palette: "));  DBG_PRINTLN(gCurrentPaletteNumber);
         }
         gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];                // We're just ensuring that the gTargetPalette WILL be assigned.
       }
@@ -383,9 +391,7 @@ void loop() {
         if (StepMode >= NUM_LEDS)
         { ledMode = newMode;
           StepMode = MAX_LEDS;
-#if LOG_ON == 1
-          Serial.println(F("End SetMode"));
-#endif
+          DBG_PRINTLN(F("End SetMode"));
         }
         nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, NUM_LEDS);
       }
@@ -393,117 +399,117 @@ void loop() {
 #endif
 
     if (glitter) addglitter(10);                                                // If the glitter flag is set, let's add some.
-#if CANDLE_KOL >0
+#if CANDLE_KOL > 0
     if (candle)  addcandle();
 #endif
 
     if (background) addbackground();                                            // Включить заполнение черного цвета фоном
   }
+//
+//#if KEY_ON == 1                                                             //Для аналоговых кнопок
+//  key_input_new = analogRead(PIN_KEY);                                      //прочитаем аналоговые кнопки
+//  if  ( ( ( (key_input - KEY_DELTA) > key_input_new) ||                     //Пришло новое значение отличное от прошлого
+//          ( (key_input + KEY_DELTA) < key_input_new) ) &&
+//        !key_bounce ) {                                                     // и еще ничего не приходило
+//    key_bounce = 1;                                                         //Начинаем обрабатывать
+//    key_time = millis();                                                    //Запомним время
+//  }
+//  else if (  key_bounce &&                                                    //Обрабатываем нажатия
+//             ((millis() - key_time) >= 50 )  ) {                               //Закончилось время дребезга
+//    key_bounce = 0;                                                       //Больше не обрабатываем
+//    key_input = key_input_new;
+//#if LOG_ON == 1
+//    DBG_PRINT(F("Analog Key: ")); DBG_PRINTLN(key_input);
+//#endif
+//
+//#if KEY_0 >= KEY_DELTA
+//    if  ( ( (KEY_0 - KEY_DELTA) < key_input) &&
+//          ( (KEY_0 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_0
+//      Protocol = 1;
+//      Command = KEY_0;
+//    }
+//#endif
+//#if KEY_1 >= KEY_DELTA
+//    if  ( ( (KEY_1 - KEY_DELTA) < key_input) &&
+//          ( (KEY_1 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_1
+//      Protocol = 1;
+//      Command = KEY_1;
+//    }
+//#endif
+//#if KEY_2 >= KEY_DELTA
+//    if  ( ( (KEY_2 - KEY_DELTA) < key_input) &&
+//          ( (KEY_2 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_2
+//      Protocol = 1;
+//      Command = KEY_2;
+//    }
+//#endif
+//#if KEY_3 >= KEY_DELTA
+//    if  ( ( (KEY_3 - KEY_DELTA) < key_input) &&
+//          ( (KEY_3 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_3
+//      Protocol = 1;
+//      Command = KEY_3;
+//    }
+//#endif
+//#if KEY_4 >= KEY_DELTA
+//    if  ( ( (KEY_4 - KEY_DELTA) < key_input) &&
+//          ( (KEY_4 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_4
+//      Protocol = 1;
+//      Command = KEY_4;
+//    }
+//#endif
+//#if KEY_5 >= KEY_DELTA
+//    if  ( ( (KEY_5 - KEY_DELTA) < key_input) &&
+//          ( (KEY_5 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_5
+//      Protocol = 1;
+//      Command = KEY_5;
+//    }
+//#endif
+//#if KEY_6 >= KEY_DELTA
+//    if  ( ( (KEY_6 - KEY_DELTA) < key_input) &&
+//          ( (KEY_6 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_6
+//      Protocol = 1;
+//      Command = KEY_6;
+//    }
+//#endif
+//#if KEY_7 >= KEY_DELTA
+//    if  ( ( (KEY_7 - KEY_DELTA) < key_input) &&
+//          ( (KEY_7 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_7
+//      Protocol = 1;
+//      Command = KEY_7;
+//    }
+//#endif
+//  }
+//#endif
 
-#if KEY_ON == 1                                                             //Для аналоговых кнопок
-  key_input_new = analogRead(PIN_KEY);                                      //прочитаем аналоговые кнопки
-  if  ( ( ( (key_input - KEY_DELTA) > key_input_new) ||                     //Пришло новое значение отличное от прошлого
-          ( (key_input + KEY_DELTA) < key_input_new) ) &&
-        !key_bounce ) {                                                     // и еще ничего не приходило
-    key_bounce = 1;                                                         //Начинаем обрабатывать
-    key_time = millis();                                                    //Запомним время
-  }
-  else if (  key_bounce &&                                                    //Обрабатываем нажатия
-             ((millis() - key_time) >= 50 )  ) {                               //Закончилось время дребезга
-    key_bounce = 0;                                                       //Больше не обрабатываем
-    key_input = key_input_new;
-#if LOG_ON == 1
-    Serial.print(F("Analog Key: ")); Serial.println(key_input);
-#endif
-
-#if KEY_0 >= KEY_DELTA
-    if  ( ( (KEY_0 - KEY_DELTA) < key_input) &&
-          ( (KEY_0 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_0
-      Protocol = 1;
-      Command = KEY_0;
-    }
-#endif
-#if KEY_1 >= KEY_DELTA
-    if  ( ( (KEY_1 - KEY_DELTA) < key_input) &&
-          ( (KEY_1 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_1
-      Protocol = 1;
-      Command = KEY_1;
-    }
-#endif
-#if KEY_2 >= KEY_DELTA
-    if  ( ( (KEY_2 - KEY_DELTA) < key_input) &&
-          ( (KEY_2 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_2
-      Protocol = 1;
-      Command = KEY_2;
-    }
-#endif
-#if KEY_3 >= KEY_DELTA
-    if  ( ( (KEY_3 - KEY_DELTA) < key_input) &&
-          ( (KEY_3 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_3
-      Protocol = 1;
-      Command = KEY_3;
-    }
-#endif
-#if KEY_4 >= KEY_DELTA
-    if  ( ( (KEY_4 - KEY_DELTA) < key_input) &&
-          ( (KEY_4 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_4
-      Protocol = 1;
-      Command = KEY_4;
-    }
-#endif
-#if KEY_5 >= KEY_DELTA
-    if  ( ( (KEY_5 - KEY_DELTA) < key_input) &&
-          ( (KEY_5 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_5
-      Protocol = 1;
-      Command = KEY_5;
-    }
-#endif
-#if KEY_6 >= KEY_DELTA
-    if  ( ( (KEY_6 - KEY_DELTA) < key_input) &&
-          ( (KEY_6 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_6
-      Protocol = 1;
-      Command = KEY_6;
-    }
-#endif
-#if KEY_7 >= KEY_DELTA
-    if  ( ( (KEY_7 - KEY_DELTA) < key_input) &&
-          ( (KEY_7 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_7
-      Protocol = 1;
-      Command = KEY_7;
-    }
-#endif
-  }
-#endif
-
-#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
+//#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
   if ( (IR_Time_Mode > 0) &&                                                //Идет отчет времени
        ((millis() - IR_Time_Mode) >= 2000 )  ) {                            //И прошло больше 2 секунд
     IR_Time_Mode = 0;
     if (IR_New_Mode <= maxMode) SetMode(IR_New_Mode);
     IR_New_Mode = 0;
   }
-#endif
+//#endif
 
-#if IR_ON == 1
-  while (!irrecv.isIdle());                                                   // if not idle, wait till complete
-
-  if (irrecv.decode(&results)) {
-    /* respond to button */
-
-    if (!Protocol) {
-      Protocol = 1;                                        // update the values to the newest valid input
-
-#if IR_REPEAT == 1
-      if ( results.value != 0xffffffff)                    //Если не повтор то вставить новую команду
-        Command = results.value;
-      else Protocol = 2;
-#else
-      Command = results.value;
-#endif
-    }
-    irrecv.resume(); // Set up IR to receive next value.
-  }
-#endif
+//#if IR_ON == 1
+//  while (!irrecv.isIdle());                                                   // if not idle, wait till complete
+//
+//  if (irrecv.decode(&results)) {
+//    /* respond to button */
+//
+//    if (!Protocol) {
+//      Protocol = 1;                                        // update the values to the newest valid input
+//
+//#if IR_REPEAT == 1
+//      if ( results.value != 0xffffffff)                    //Если не повтор то вставить новую команду
+//        Command = results.value;
+//      else Protocol = 2;
+//#else
+//      Command = results.value;
+//#endif
+//    }
+//    irrecv.resume(); // Set up IR to receive next value.
+//  }
+//#endif
 
   static uint32_t showTimer = 0;
   if (onFlag && millis() - showTimer >= 10) {
@@ -518,12 +524,12 @@ void strobe_mode(uint8_t mode, bool mc) {                  // mc stands for 'Mod
 
   if (mc) {
     fill_solid(leds, NUM_LEDS, CRGB(0, 0, 0));                // Clean up the array for the first time through. Don't show display though, so you may have a smooth transition.
-#if LOG_ON == 1
-    Serial.print(F("Mode: "));
-    Serial.println(mode);
-    Serial.println(millis());
-#endif
-#if PALETTE_TIME>0
+
+    DBG_PRINT(F("Mode: "));
+    DBG_PRINTLN(mode);
+    DBG_PRINTLN(millis());
+
+#if PALETTE_TIME > 0
     if (palchg == 0) palchg = 3;
 #else
     if (palchg == 0) palchg = 1;
@@ -880,13 +886,13 @@ void strobe_mode(uint8_t mode, bool mc) {                  // mc stands for 'Mod
 
   } // switch mode
 
-#if LOG_ON == 1
+
   if (mc) {
-    if ( palchg == 0 ) Serial.println(F("Change palette off"));
-    else if ( palchg == 1 ) Serial.println(F("Change palette Stop"));
-    else if ( palchg == 3 ) Serial.println(F("Change palette ON"));
+    if ( palchg == 0 ) DBG_PRINTLN(F("Change palette off"));
+    else if ( palchg == 1 ) DBG_PRINTLN(F("Change palette Stop"));
+    else if ( palchg == 3 ) DBG_PRINTLN(F("Change palette ON"));
   }
-#endif
+
 
 } // strobe_mode()
 
@@ -917,14 +923,14 @@ void demo_check() {
       rand_spark = random8(3) + 1;
 #endif
 
-#if LOG_ON == 1
-      Serial.println(F("Start SetMode"));
-#endif
+
+      DBG_PRINTLN(F("Start SetMode"));
+
 #else
       gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];  //Применим палитру
-#if LOG_ON == 1
-      Serial.print(F("New Palette: "));  Serial.println(gCurrentPaletteNumber);
-#endif
+
+      DBG_PRINT(F("New Palette: "));  DBG_PRINTLN(gCurrentPaletteNumber);
+
       switch (demorun)  {
         case 2:   ledMode = random8(0, maxMode);                // демо 2
           break;
@@ -941,7 +947,7 @@ void demo_check() {
           break;
       }
       strobe_mode(ledMode, 1);                                // Does NOT reset to 0.
-#if CANDLE_KOL >0
+#if CANDLE_KOL > 0
       PolCandle = random8(CANDLE_KOL);
 #endif
 #endif
