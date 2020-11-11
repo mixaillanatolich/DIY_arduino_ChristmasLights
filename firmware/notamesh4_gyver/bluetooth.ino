@@ -2,7 +2,7 @@
 #define PARSE_AMOUNT 8    // максимальное количество значений в массиве, который хотим получить
 #define HEADER_SYMBOL '$'        // стартовый символ
 
-int intData[PARSE_AMOUNT];     // массив численных значений после парсинга
+//int intData[PARSE_AMOUNT];     // массив численных значений после парсинга
 boolean recievedFlag;
 String request = "1234567891011121314151617181920";
 boolean getStarted;
@@ -16,7 +16,7 @@ int16_t modeNum = 0;     // номер режима
 uint32_t parseTimer;
 uint16_t parseWaitPeriod = 2*1000; // wait 2 sec
 
-byte byte_convert[255];
+uint8_t byte_convert[255];
 byte byte_index = 0;
 byte expected_bytes = 0;
 
@@ -57,6 +57,14 @@ void sendSettings() {
   */
 }
 
+String successResponse() {
+      String response = "";
+      response += (char)0x24; //cmd
+      response += (char)0x01; //len
+      response += (char)0x01; //response
+      return response;
+}
+
 void bluetoothTick() {
   parsing();               // функция парсинга
   if (recievedFlag) {     // если получены данные
@@ -74,72 +82,28 @@ void bluetoothTick() {
     } 
     DBG_PRINTLN("===========");
     */
-
-    switch (intData[0]) {
-        case 0:
-            Command = 0x0;
-            Command |= ((int)byte_convert[2]) << 24;
-            Command |= ((int)byte_convert[3]) << 16;
-            Command |= ((int)byte_convert[4]) << 8;
-            Command |= ((int)byte_convert[5]);
+    switch (byte_convert[0]) {
+        case 0:   // ping
+            btSerial.print(successResponse());
+            break;
+        case 2:
+//            Command = 0x0;
+//            Command |= ((uint32_t)byte_convert[4]) << 24;
+//            Command |= ((uint32_t)byte_convert[3]) << 16;
+//            Command |= ((uint32_t)byte_convert[2]) << 8;
+//            Command |= ((uint32_t)byte_convert[1]);
+            Command = (uint32_t)byte_convert[1];
             handleControlCmd();
+            btSerial.print(successResponse());
             break;
-        case 1:
-            int mode = (int)byte_convert[2];
+        case 3:
+            int mode = (int)byte_convert[1];
+            DBG_PRINT("new mode: ");
+            DBG_PRINTLN(mode);
             SetMode(mode);
+            btSerial.print(successResponse());
             break;
     }
-    
-    /*
-    switch (intData[0]) {
-      case 0:   // запрос онлайна
-        request = "OK ";
-        request += String(batPerc);
-        btDBG_PRINT(request);
-        break;
-      case 1:   // запрос состояния (настройки, пресет)
-        sendSettings();
-        btnControl = false;
-        break;
-      case 2:   // применить настройки
-        for (byte i = 0; i < 6; i++) {
-          presetSettings[i] = intData[i + 1];
-        }
-        presetSettings[setAmount[modeNum] - 1] = intData[6]; // белый
-        settingsChanged = true;
-
-        if (intData[7] != 10) invSet = intData[7];
-        else invSet = setAmount[modeNum] - 1; // ой костыли бл*ть
-        navPos = 2;
-        invFlag = true;
-        drawSettings();
-        changeFlag = true;
-        btnControl = false;
-        eeprFlag = true;
-        eeprTimer = millis();
-        break;
-      case 3:   // смена пресета
-        changePresetTo(intData[1]);
-        sendSettings();
-        btnControl = false;
-        eeprFlag = true;
-        eeprTimer = millis();
-        break;
-      case 4:   // смена режима
-        modeNum = intData[1];
-        changeMode();
-        sendSettings();
-        btnControl = false;
-        eeprFlag = true;
-        eeprTimer = millis();
-        break;
-      case 5:   // вкл/выкл
-        if (intData[1]) LEDon();
-        else LEDoff();
-        btnControl = false;
-        break;
-    }
-    */
   }
 }
 
@@ -158,7 +122,7 @@ void parsing() {
     }
   
     if (btSerial.available() > 0) {
-        char incomingByte = btSerial.read();      // обязательно ЧИТАЕМ входящий символ
+        uint8_t incomingByte = btSerial.read();      // обязательно ЧИТАЕМ входящий символ
         parseTimer = millis();
 
         DBG_PRINT("b: ");
@@ -180,44 +144,8 @@ void parsing() {
             DBG_PRINTLN(byte_index);
 
             if (expected_bytes == byte_index) {
-                for (byte i = 0; i < expected_bytes; i++) {
-                    intData[i] = byte_convert[i];
-                    index++;
-                }
                 getStarted = false;
-                recievedFlag = true; 
-        /*
-        if (byte_index == 1) {
-          intData[0] = byte_convert[0];
-          index = 1;
-        } else if (byte_index == 2) {
-          intData[0] = byte_convert[0];
-          intData[1] = byte_convert[1];
-          index =2;
-        }
-
-        if (byte_index == 12) {
-          intData[0] = byte_convert[0];
-          intData[1] = byte_convert[1];
-          intData[2] = 0;
-          intData[2] |= ((int)byte_convert[2]) << 8;
-          intData[2] |= ((int)byte_convert[3]);
-          intData[3] = 0;
-          intData[3] |= ((int)byte_convert[4]) << 8;
-          intData[3] |= ((int)byte_convert[5]);
-          intData[4] = 0;
-          intData[4] |= ((int)byte_convert[6]) << 8;
-          intData[4] |= ((int)byte_convert[7]);
-          intData[5] = 0;
-          intData[5] |= ((int)byte_convert[8]) << 8;
-          intData[5] |= ((int)byte_convert[9]);
-          
-          intData[6] = byte_convert[10];
-          intData[7] = byte_convert[11];
-          index = 7;
-        }
-        */
-                   
+                recievedFlag = true;
             }
         } else {
             if (incomingByte == HEADER_SYMBOL) {

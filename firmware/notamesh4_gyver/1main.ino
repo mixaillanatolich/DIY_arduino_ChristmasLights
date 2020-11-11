@@ -176,6 +176,9 @@ GButton btn(BTN_PIN);
 #define BT_TX 8
 SoftwareSerial btSerial(BT_TX, BT_RX); // RX, TX
 
+//#include <HardwareSerial.h>
+//HardwareSerial *btSerial;
+
 /*------------------------------------------------------------------------------------------
   --------------------------------------- Start of code --------------------------------------
   ------------------------------------------------------------------------------------------*/
@@ -276,6 +279,9 @@ void setup() {
     DBG_PRINTLN(DEMO_MODE);
   }
   DBG_PRINTLN(F("---SETUP COMPLETE---"));
+
+//  btSerial = &Serial;
+//  btSerial->begin(9600);
 
   btSerial.begin(9600);
 
