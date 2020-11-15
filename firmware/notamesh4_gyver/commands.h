@@ -41,15 +41,15 @@
 #define IR_Key_Palette_Next                 0x17  // ->                     // Выберите следующую палитру        Установить следующую палитру
 #define IR_Key_Palette_Auto                 0x18  // Enter                  // Включить поворот палитры          Продолжить автоматический перебор палитр
 
-#define IR_Key_Solid_Black                  0x19  // <<                     //  Установить цвет Черный  (Выключает гирлянду, Например перед тем как сказать елочка зажгись на детском утреннике)
-#define IR_Key_Solid_Red                    0x1a  // >>                     //  Установить цвет Красный
-#define IR_Key_Solid_Orange                 0x1b  // |<<                    //  Установить цвет Оранжевый
-#define IR_Key_Solid_Yellow                 0x1c  // >>|                    //  Установить цвет Желтый
-#define IR_Key_Solid_Green                  0x1d  // |>                     //  Установить цвет Зеленый
-#define IR_Key_Solid_SkyBlue                0x1e  // ||                     //  Установить цвет Голубой
-#define IR_Key_Solid_Blue                   0x1f  // []                     //  Установить цвет Синий
-#define IR_Key_Solid_Violet                 0x20  // ><                     //  Установить цвет Фиолетовый
-#define IR_Key_Solid_White                  0x21  // Zoom                   //  Установить цвет Белый
+#define IR_Key_Solid_Black                  0x20  // <<                     //  Установить цвет Черный  (Выключает гирлянду, Например перед тем как сказать елочка зажгись на детском утреннике)
+#define IR_Key_Solid_Red                    0x21  // >>                     //  Установить цвет Красный
+#define IR_Key_Solid_Orange                 0x22  // |<<                    //  Установить цвет Оранжевый
+#define IR_Key_Solid_Yellow                 0x23  // >>|                    //  Установить цвет Желтый
+#define IR_Key_Solid_Green                  0x24  // |>                     //  Установить цвет Зеленый
+#define IR_Key_Solid_SkyBlue                0x25  // ||                     //  Установить цвет Голубой
+#define IR_Key_Solid_Blue                   0x26  // []                     //  Установить цвет Синий
+#define IR_Key_Solid_Violet                 0x27  // ><                     //  Установить цвет Фиолетовый
+#define IR_Key_Solid_White                  0x28  // Zoom                   //  Установить цвет Белый
 
 #endif
 

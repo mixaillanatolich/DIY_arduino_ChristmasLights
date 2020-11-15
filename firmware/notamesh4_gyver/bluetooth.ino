@@ -1,15 +1,15 @@
 
-#define PARSE_AMOUNT 8    // максимальное количество значений в массиве, который хотим получить
+//#define PARSE_AMOUNT 8    // максимальное количество значений в массиве, который хотим получить
 #define HEADER_SYMBOL '$'        // стартовый символ
 
 //int intData[PARSE_AMOUNT];     // массив численных значений после парсинга
 boolean recievedFlag;
 String request = "1234567891011121314151617181920";
 boolean getStarted;
-byte index;
-String string_convert = "";
-int16_t presetNum;   // номер пресета
-int16_t modeNum = 0;     // номер режима
+//byte index;
+//String string_convert = "";
+//int16_t presetNum;   // номер пресета
+//int16_t modeNum = 0;     // номер режима
 //int presetSettings[6];    // текущие настройки пресета
 //boolean ONflag = true;
 
@@ -20,14 +20,64 @@ uint8_t byte_convert[255];
 byte byte_index = 0;
 byte expected_bytes = 0;
 
+void sendCommand(String cmd) {
+#if HARDWARE_BT_SERIAL
+    Serial.print(cmd);
+#else
+    uint8_t bytes[3] = {79, 80, 81};  
+    btSerial.write(bytes,1);
+#endif
+}
+
+void sendCommand2(uint8_t cmd[], uint8_t len) {
+#if HARDWARE_BT_SERIAL
+    Serial.print(cmd);
+#else
+  //  uint8_t bytes[3] = {79, 80, 81};  
+    btSerial.write(cmd,len);
+#endif
+}
+
 void sendSettings() {
+
+    uint8_t cmd[3];
+    cmd[0] = 0xA5;
+    cmd[1] = 0x05;
+    cmd[2] = ledMode;
+    cmd[3] = demorun;
+    cmd[4] = glitter;
+    cmd[5] = background;
+    cmd[6] = candle;
+    sendCommand2(cmd,cmd[1]+2);
+
+    return;
+  
+
   request = "";
   
-  request += (char)0x55;
-  request += (char)presetNum;
-  request += (char)modeNum;
+  request += (char)0xA5;
+  request += (char)0x05;
+  request += (char)ledMode;
+  request += (char)demorun;
+  request += (char)glitter;
+  request += (char)background;
+  request += (char)candle;
 
-  for (byte i = 0; i < 5; i++) {
+  DBG_PRINT("response: ");
+  DBG_PRINTLN(request);
+  int len2 = request.length();
+  for (int i = 0; i < len2; i++) {
+    DBG_PRINT(request.charAt(i),HEX);
+    DBG_PRINT(" ");
+  }
+  DBG_PRINTLN("");
+  
+  sendCommand(request);
+  
+//  request += (char)presetNum;
+//  request += (char)modeNum;
+
+//  for (byte i = 0; i < 5; i++) {
 //    byte b1 = (presetSettings[i]>>8);
 //    byte b2 = (presetSettings[i]);
 //    request += (char) b2;
@@ -41,10 +91,19 @@ void sendSettings() {
     }
     DBG_PRINTLN(" ");
     */
-  }
+//  }
 
  // request += (char)ONflag;
-  btSerial.print(request);
+ // btSerial.print(request);
+
+    
+//
+//#if HARDWARE_BT_SERIAL
+//    Serial.print(request);
+//#else
+//    btSerial.print(request);
+//#endif
+ 
 
   /*
   DBG_PRINTLN("");
@@ -57,12 +116,17 @@ void sendSettings() {
   */
 }
 
-String successResponse() {
-      String response = "";
-      response += (char)0x24; //cmd
-      response += (char)0x01; //len
-      response += (char)0x01; //response
-      return response;
+void successResponse() {
+      uint8_t cmd[3];// = {79, 80, 81};  
+      cmd[0] = 0xA0;
+      cmd[1] = 0x01;
+      cmd[2] = 0x01;
+      sendCommand2(cmd,cmd[1]+2);
+//      String response = "";
+//      response += (char)0xA0; //cmd
+//      response += (char)0x01; //len
+//      response += (char)0x01; //response
+//      sendCommand(response);
 }
 
 void bluetoothTick() {
@@ -82,28 +146,38 @@ void bluetoothTick() {
     } 
     DBG_PRINTLN("===========");
     */
+
+    bool needSendSuccessResponse = false;
+    bool needSendSettingsResponse = false;
     switch (byte_convert[0]) {
         case 0:   // ping
-            btSerial.print(successResponse());
+            needSendSuccessResponse = true;
+            break;
+        case 1:   // ping
+            needSendSettingsResponse = true;
             break;
         case 2:
-//            Command = 0x0;
-//            Command |= ((uint32_t)byte_convert[4]) << 24;
-//            Command |= ((uint32_t)byte_convert[3]) << 16;
-//            Command |= ((uint32_t)byte_convert[2]) << 8;
-//            Command |= ((uint32_t)byte_convert[1]);
             Command = (uint32_t)byte_convert[1];
             handleControlCmd();
-            btSerial.print(successResponse());
+            needSendSettingsResponse = true;
             break;
         case 3:
             int mode = (int)byte_convert[1];
             DBG_PRINT("new mode: ");
             DBG_PRINTLN(mode);
             SetMode(mode);
-            btSerial.print(successResponse());
+            needSendSuccessResponse = true;
             break;
     }
+
+    if (needSendSuccessResponse) {
+        successResponse();
+    }
+
+    if (needSendSettingsResponse) {
+        sendSettings();
+    }
+    
   }
 }
 
@@ -114,15 +188,20 @@ void parsing() {
         if ((millis() - parseTimer >= parseWaitPeriod)) {
             parseTimer = millis();
             getStarted = false;
-            index = 0;
+            //index = 0;
             expected_bytes = 0;
             byte_index = 0;
             DBG_PRINTLN("Reset parse msg by timeout");
         }
     }
-  
+
+#if HARDWARE_BT_SERIAL
+    if (Serial.available() > 0) {
+        uint8_t incomingByte = Serial.read();      // обязательно ЧИТАЕМ входящий символ
+#else
     if (btSerial.available() > 0) {
         uint8_t incomingByte = btSerial.read();      // обязательно ЧИТАЕМ входящий символ
+#endif
         parseTimer = millis();
 
         DBG_PRINT("b: ");
@@ -150,7 +229,7 @@ void parsing() {
         } else {
             if (incomingByte == HEADER_SYMBOL) {
                 getStarted = true;
-                index = 0;
+                //index = 0;
                 expected_bytes = 0;
                 byte_index = 0;
             }

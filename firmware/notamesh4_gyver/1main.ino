@@ -171,26 +171,27 @@ void demo_check();
 
 GButton btn(BTN_PIN);
 
+#if HARDWARE_BT_SERIAL
+#else
 #include <SoftwareSerial.h>
 #define BT_RX 7
 #define BT_TX 8
 SoftwareSerial btSerial(BT_TX, BT_RX); // RX, TX
+#endif
 
-//#include <HardwareSerial.h>
-//HardwareSerial *btSerial;
 
 /*------------------------------------------------------------------------------------------
   --------------------------------------- Start of code --------------------------------------
   ------------------------------------------------------------------------------------------*/
 void setup() {
 
-//#if KEY_ON == 1
-//  pinMode(PIN_KEY, INPUT);                                                        //Для аналоговых кнопок
-//#endif
+#if HARDWARE_BT_SERIAL
+      Serial.begin(9600);
+#else
+      Serial.begin(SERIAL_BAUDRATE);                                                  // Setup serial baud rate
+      DBG_PRINTLN(F(" ")); DBG_PRINTLN(F("---SETTING UP---"));
+#endif
 
-
-  Serial.begin(SERIAL_BAUDRATE);                                                  // Setup serial baud rate
-  DBG_PRINTLN(F(" ")); DBG_PRINTLN(F("---SETTING UP---"));
 
   delay(1000);                                                                    // Slow startup so we can re-upload in the case of errors.
 
@@ -217,6 +218,14 @@ void setup() {
 
 
 //#if IR_ON == 1
+
+//  for (int i = 0 ; i < EEPROM.length() ; i++) {
+//    EEPROM.write(i, 0);
+//  }
+//  // turn the LED on when we're done
+//  digitalWrite(13, HIGH);
+
+
 
   ledMode = EEPROM.read(STARTMODE);
   // Location 0 is the starting mode.
@@ -245,10 +254,14 @@ void setup() {
     NUM_LEDS = INITLEN;
     meshdelay = INITDEL;
   }
+  
+  
 //#else
-//  ledMode = INITMODE;
-//  NUM_LEDS = KOL_LED;
-//  meshdelay = INITDEL;
+/*
+  ledMode = INITMODE;
+  NUM_LEDS = KOL_LED;
+  meshdelay = INITDEL;
+  */
 //#endif
 
 
@@ -283,7 +296,10 @@ void setup() {
 //  btSerial = &Serial;
 //  btSerial->begin(9600);
 
-  btSerial.begin(9600);
+#if HARDWARE_BT_SERIAL
+#else
+    btSerial.begin(9600);
+#endif
 
 } // setup()
 
@@ -392,10 +408,13 @@ void loop() {
 #if CHANGE_ON == 1
     EVERY_N_MILLISECONDS(CHANGE_TIME * 1000 / NUM_LEDS) {                      // Движение плавной смены эффектов
       if ( StepMode < NUM_LEDS)
-      { StepMode++;
+      { 
+        StepMode++;
         if (StepMode == 10) strobe_mode(newMode, 1);
         if (StepMode >= NUM_LEDS)
-        { ledMode = newMode;
+        { 
+          
+          ledMode = newMode;
           StepMode = MAX_LEDS;
           DBG_PRINTLN(F("End SetMode"));
         }
@@ -952,6 +971,12 @@ void demo_check() {
           else ledMode++;
           break;
       }
+
+
+      sendSettings();
+
+
+      
       strobe_mode(ledMode, 1);                                // Does NOT reset to 0.
 #if CANDLE_KOL > 0
       PolCandle = random8(CANDLE_KOL);

@@ -63,7 +63,7 @@
 //ЕСЛИ НЕ ИСПОЛЬЗУЕТСЯ ЗАКОМЕНТИРОВАТЬ
 
 #define POWER_V       5           // напряжение блока питания в Вольтах
-#define POWER_I       1000        // Ток блока питания в милиАмперах
+#define POWER_I       100        // Ток блока питания в милиАмперах
 
 
 //////////////////////////////////////// Параметры программы
@@ -104,7 +104,14 @@
 #define DIRECT_TIME   30          // Через сколько секунд менять направление если 0 - не меняем
 #define PALETTE_TIME  60          // Через сколько секунд менять палитру если 0 - не меняем
 
+#define HARDWARE_BT_SERIAL        0 
+
+#if HARDWARE_BT_SERIAL
+#define LOG_ON        0 
+#else
 #define LOG_ON        1           // Включить лог  1 - включить лог
+#endif
+
 
 #if LOG_ON
 # define DBG_PRINT(...)    Serial.print(__VA_ARGS__)
