@@ -53,18 +53,18 @@
 
 #endif
 
-void SetMode (uint8_t Mode) { 
+void SetMode(uint8_t modeId) { 
     demorun = 0;
 #if CHANGE_ON == 1
-    newMode = Mode;
+    newMode = modeId;
     StepMode = 1;
 #if CHANGE_SPARK == 4
     rand_spark = random8(3) + 1;
 #endif //CHANGE_SPARK
 #else //CHANGE_ON
-    ledMode = Mode;
+    ledMode = modeId;
     meshwait();
-    strobe_mode(Mode, 1);                                // Does NOT reset to 0.
+    strobe_mode(modeId, 1);                                // Does NOT reset to 0.
 #endif // else CHANGE_ON
 
 #if CANDLE_KOL > 0
@@ -104,22 +104,38 @@ void handleControlCmd() {
         break;
 
       case IR_Key_Demo :            /////////////////////////////////////////////////////////////////////////////  Включит демо режим (перебор)
-        demorun = 1; meshwait();
+        if (ledMode > maxMode) {
+            SetMode(newMode);
+        }
+        demorun = 1; 
+        meshwait();
         DBG_PRINTLN(F("Demo On"));
         break;
 
       case IR_Key_Demo_Random :     /////////////////////////////////////////////////////////////////////////////  Включит демо режим (Случайно)
-        demorun = 2; meshwait();
+        if (ledMode > maxMode) {
+            SetMode(newMode);
+        }
+        demorun = 2; 
+        meshwait();
         DBG_PRINTLN(F("Demo Random On"));
         break;
 
       case IR_Key_Demo_MyMode :         /////////////////////////////////////////////////////////////////////////////  Включит демо режим из выбранных режимов (перебор)
-        demorun = 3; meshwait();
+        if (ledMode > maxMode) {
+            SetMode(newMode);
+        }
+        demorun = 3; 
+        meshwait();
         DBG_PRINTLN(F("Demo On"));
         break;
 
       case IR_Key_Demo_MyMode_Random :     /////////////////////////////////////////////////////////////////////////////  Включит демо режим из выбранных режимов (Случайно)
-        demorun = 4; meshwait();
+        if (ledMode > maxMode) {
+            SetMode(newMode);
+        }
+        demorun = 4; 
+        meshwait();
         DBG_PRINTLN(F("Demo Random On"));
         break;
 
@@ -187,14 +203,20 @@ void handleControlCmd() {
         break;
 
       case IR_Key_Previous_mode :          ///////////////////////////////////////////////////////////////////////////  Предыдущий эффект
-          if (ledMode > 0)  SetMode(ledMode - 1);
-          else            SetMode(maxMode);
+          if (ledMode > 0) {
+              SetMode(ledMode - 1);
+          } else {
+              SetMode(maxMode);
+          }
           DBG_PRINTLN(F("Previous mode"));
         break;
 
       case IR_Key_Next_mode :              ///////////////////////////////////////////////////////////////////////////  Следующий эффект
-          if (ledMode >= (maxMode))  SetMode(0);
-          else                      SetMode(ledMode + 1);
+          if (ledMode >= (maxMode)) {
+              SetMode(0);
+          } else {
+              SetMode(ledMode + 1);
+          }
           DBG_PRINTLN(F("Next mode"));
         break;
 

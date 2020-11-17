@@ -416,6 +416,7 @@ void loop() {
           
           ledMode = newMode;
           StepMode = MAX_LEDS;
+          sendSettingsUpdate();
           DBG_PRINTLN(F("End SetMode"));
         }
         nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, NUM_LEDS);
@@ -430,111 +431,13 @@ void loop() {
 
     if (background) addbackground();                                            // Включить заполнение черного цвета фоном
   }
-//
-//#if KEY_ON == 1                                                             //Для аналоговых кнопок
-//  key_input_new = analogRead(PIN_KEY);                                      //прочитаем аналоговые кнопки
-//  if  ( ( ( (key_input - KEY_DELTA) > key_input_new) ||                     //Пришло новое значение отличное от прошлого
-//          ( (key_input + KEY_DELTA) < key_input_new) ) &&
-//        !key_bounce ) {                                                     // и еще ничего не приходило
-//    key_bounce = 1;                                                         //Начинаем обрабатывать
-//    key_time = millis();                                                    //Запомним время
-//  }
-//  else if (  key_bounce &&                                                    //Обрабатываем нажатия
-//             ((millis() - key_time) >= 50 )  ) {                               //Закончилось время дребезга
-//    key_bounce = 0;                                                       //Больше не обрабатываем
-//    key_input = key_input_new;
-//#if LOG_ON == 1
-//    DBG_PRINT(F("Analog Key: ")); DBG_PRINTLN(key_input);
-//#endif
-//
-//#if KEY_0 >= KEY_DELTA
-//    if  ( ( (KEY_0 - KEY_DELTA) < key_input) &&
-//          ( (KEY_0 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_0
-//      Protocol = 1;
-//      Command = KEY_0;
-//    }
-//#endif
-//#if KEY_1 >= KEY_DELTA
-//    if  ( ( (KEY_1 - KEY_DELTA) < key_input) &&
-//          ( (KEY_1 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_1
-//      Protocol = 1;
-//      Command = KEY_1;
-//    }
-//#endif
-//#if KEY_2 >= KEY_DELTA
-//    if  ( ( (KEY_2 - KEY_DELTA) < key_input) &&
-//          ( (KEY_2 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_2
-//      Protocol = 1;
-//      Command = KEY_2;
-//    }
-//#endif
-//#if KEY_3 >= KEY_DELTA
-//    if  ( ( (KEY_3 - KEY_DELTA) < key_input) &&
-//          ( (KEY_3 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_3
-//      Protocol = 1;
-//      Command = KEY_3;
-//    }
-//#endif
-//#if KEY_4 >= KEY_DELTA
-//    if  ( ( (KEY_4 - KEY_DELTA) < key_input) &&
-//          ( (KEY_4 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_4
-//      Protocol = 1;
-//      Command = KEY_4;
-//    }
-//#endif
-//#if KEY_5 >= KEY_DELTA
-//    if  ( ( (KEY_5 - KEY_DELTA) < key_input) &&
-//          ( (KEY_5 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_5
-//      Protocol = 1;
-//      Command = KEY_5;
-//    }
-//#endif
-//#if KEY_6 >= KEY_DELTA
-//    if  ( ( (KEY_6 - KEY_DELTA) < key_input) &&
-//          ( (KEY_6 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_6
-//      Protocol = 1;
-//      Command = KEY_6;
-//    }
-//#endif
-//#if KEY_7 >= KEY_DELTA
-//    if  ( ( (KEY_7 - KEY_DELTA) < key_input) &&
-//          ( (KEY_7 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_7
-//      Protocol = 1;
-//      Command = KEY_7;
-//    }
-//#endif
-//  }
-//#endif
 
-//#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
   if ( (IR_Time_Mode > 0) &&                                                //Идет отчет времени
        ((millis() - IR_Time_Mode) >= 2000 )  ) {                            //И прошло больше 2 секунд
     IR_Time_Mode = 0;
     if (IR_New_Mode <= maxMode) SetMode(IR_New_Mode);
     IR_New_Mode = 0;
   }
-//#endif
-
-//#if IR_ON == 1
-//  while (!irrecv.isIdle());                                                   // if not idle, wait till complete
-//
-//  if (irrecv.decode(&results)) {
-//    /* respond to button */
-//
-//    if (!Protocol) {
-//      Protocol = 1;                                        // update the values to the newest valid input
-//
-//#if IR_REPEAT == 1
-//      if ( results.value != 0xffffffff)                    //Если не повтор то вставить новую команду
-//        Command = results.value;
-//      else Protocol = 2;
-//#else
-//      Command = results.value;
-//#endif
-//    }
-//    irrecv.resume(); // Set up IR to receive next value.
-//  }
-//#endif
 
   static uint32_t showTimer = 0;
   if (onFlag && millis() - showTimer >= 10) {
@@ -918,7 +821,7 @@ void strobe_mode(uint8_t mode, bool mc) {                  // mc stands for 'Mod
     else if ( palchg == 3 ) DBG_PRINTLN(F("Change palette ON"));
   }
 
-
+ 
 } // strobe_mode()
 
 void demo_check() {
@@ -973,7 +876,7 @@ void demo_check() {
       }
 
 
-      sendSettings();
+      sendSettingsUpdate();
 
 
       
