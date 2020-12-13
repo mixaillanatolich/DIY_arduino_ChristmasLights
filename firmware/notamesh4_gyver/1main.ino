@@ -9,25 +9,11 @@
 
 #include "FastLED.h"                                          // https://github.com/FastLED/FastLED
 #include "EEPROM.h"                                           // This is included with base install
-//#include "IRremote.h"                                         // 
-
 
 #if FASTLED_VERSION < 3001000
 #error "Requires FastLED 3.1 or later; check github for latest code."
 #endif
 
-//#if KEY_ON == 1                                                 //Для аналоговых кнопок
-//int key_input = 0;                                            //Последнее нажатие кнопки
-//int key_input_new;                                            //только что пришедьшее нажатие кнопки
-//bool key_bounce = 0;                                          //для антидребезга
-//uint32_t key_time;                                            //время последнего нажатия
-//#endif
-
-//#if IR_ON == 1
-//int RECV_PIN = PIN_IR;
-//IRrecv irrecv(RECV_PIN);
-//decode_results results;
-//#endif
 
 //#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
 uint8_t  IR_New_Mode = 0;                                      //Выбор эффекта
@@ -37,12 +23,7 @@ uint32_t IR_Time_Mode = 0;                                     //время по
 // Serial definition
 #define SERIAL_BAUDRATE 57600                                 // Or 115200.
 
-// Fixed definitions cannot change on the fly.
-//#if IR_ON == 1
 #define MAX_LEDS IR_MAX_LEDS
-//#else
-//#define MAX_LEDS  KOL_LED
-//#endif
 
 // Initialize changeable global variables.
 #if MAX_LEDS < 255
@@ -165,18 +146,34 @@ void demo_check();
 #include "fire.h"
 #include "candles.h"
 #include "colorwave.h"
-//#include "getirl.h"
 #include "GyverButton.h"
 #include "commands.h"                                         // The commands.
 
 GButton btn(BTN_PIN);
 
+#include <SoftwareSerial.h>
+
+
+#if (MCU_TYPE == ArduinoAVR)
 #if HARDWARE_BT_SERIAL
 #else
-#include <SoftwareSerial.h>
 #define BT_RX 7
 #define BT_TX 8
-SoftwareSerial btSerial(BT_TX, BT_RX); // RX, TX
+SoftwareSerial btSerial(BT_TX, BT_RX);
+#endif
+#elif (MCU_TYPE == ESP8266)
+#if HARDWARE_BT_SERIAL
+#else
+#define BT_RX 12 //(D7)
+#define BT_TX 13 //(D6)
+SoftwareSerial btSerial(BT_TX, BT_RX);
+#endif
+#endif
+
+#if (MCU_TYPE == ESP8266)
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
+#define FASTLED_ALLOW_INTERRUPTS 0
+#include <ESP8266WiFi.h>
 #endif
 
 
@@ -192,23 +189,14 @@ void setup() {
       DBG_PRINTLN(F(" ")); DBG_PRINTLN(F("---SETTING UP---"));
 #endif
 
-
   delay(1000);                                                                    // Slow startup so we can re-upload in the case of errors.
-
-//#if IR_ON == 1
-//  irrecv.enableIRIn();                                                          // Start the receiver
-//#endif
 
   LEDS.setBrightness(max_bright);                                                 // Set the generic maximum brightness value.
 
 #if LED_CK
-
   LEDS.addLeds<CHIPSET, LED_DT, LED_CK, COLOR_ORDER>(leds, MAX_LEDS);
-
 #else
-
   LEDS.addLeds<CHIPSET, LED_DT, COLOR_ORDER >(leds, MAX_LEDS);                   //Для светодиодов WS2812B
-
 #endif
 
   set_max_power_in_volts_and_milliamps(POWER_V, POWER_I);                         //Настройка блока питания
@@ -216,8 +204,11 @@ void setup() {
   random16_set_seed(4832);                                                        // Awesome randomizer of awesomeness
   random16_add_entropy(analogRead(2));
 
+#if (MCU_TYPE == ESP8266)
+  EEPROM.begin(255);
+  delay(50);
+#endif
 
-//#if IR_ON == 1
 
 //  for (int i = 0 ; i < EEPROM.length() ; i++) {
 //    EEPROM.write(i, 0);
@@ -255,19 +246,12 @@ void setup() {
     meshdelay = INITDEL;
   }
   
-  
-//#else
-/*
-  ledMode = INITMODE;
-  NUM_LEDS = KOL_LED;
-  meshdelay = INITDEL;
-  */
-//#endif
-
+#if (MCU_TYPE == ESP8266)
+  EEPROM.commit();
+#endif
 
   DBG_PRINT(F("Initial delay: ")); DBG_PRINT(meshdelay * 100); DBG_PRINTLN(F("ms delay."));
   DBG_PRINT(F("Initial strand length: ")); DBG_PRINT(NUM_LEDS); DBG_PRINTLN(F(" LEDs"));
-
 
 #if BLACKSTART == 1
   solid = CRGB::Black;                 //Запуск с пустого поля
@@ -293,12 +277,13 @@ void setup() {
   }
   DBG_PRINTLN(F("---SETUP COMPLETE---"));
 
-//  btSerial = &Serial;
-//  btSerial->begin(9600);
-
 #if HARDWARE_BT_SERIAL
 #else
     btSerial.begin(9600);
+#endif
+
+#if (MCU_TYPE == ESP8266)
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
 #endif
 
 } // setup()
@@ -353,10 +338,6 @@ void loop() {
   }
 #endif
 
-//#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
-//  getirl();                                                                   // Обработка команд с пульта и аналоговых кнопок
-//#endif
-
   if (onFlag) {
     demo_check();                                                                 // Работа если включен демонстрационный режим
 
@@ -387,8 +368,11 @@ void loop() {
       thisdir = thisdir * -1;
     }
 #endif
-
-    EVERY_N_MILLIS_I(thistimer, thisdelay) {                                    // Sets the original delay time.
+uint16_t effectDelay = thisdelay;
+#if (MCU_TYPE == ESP8266)
+  effectDelay = thisdelay*2;
+#endif
+    EVERY_N_MILLIS_I(thistimer, effectDelay) {                                    // Sets the original delay time.
       thistimer.setPeriod(thisdelay);                                           // This is how you update the delay value on the fly.
       KolLed = NUM_LEDS;                                                        // Выводим Эффект на все светодиоды
       strobe_mode(ledMode, 0);                                                  // отобразить эффект;
@@ -406,7 +390,11 @@ void loop() {
     }
 
 #if CHANGE_ON == 1
-    EVERY_N_MILLISECONDS(CHANGE_TIME * 1000 / NUM_LEDS) {                      // Движение плавной смены эффектов
+uint16_t changeTime = CHANGE_TIME;
+#if (MCU_TYPE == ESP8266)
+  changeTime = changeTime/2;
+#endif
+    EVERY_N_MILLISECONDS(changeTime * 1000 / NUM_LEDS) {                      // Движение плавной смены эффектов
       if ( StepMode < NUM_LEDS)
       { 
         StepMode++;
