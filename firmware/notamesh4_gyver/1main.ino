@@ -153,28 +153,23 @@ GButton btn(BTN_PIN);
 
 #include <SoftwareSerial.h>
 
-
 #if (MCU_TYPE == ArduinoAVR)
-#if HARDWARE_BT_SERIAL
-#else
-#define BT_RX 7
-#define BT_TX 8
-SoftwareSerial btSerial(BT_TX, BT_RX);
-#endif
-#elif (MCU_TYPE == ESP8266)
-#if HARDWARE_BT_SERIAL
-#else
-#define BT_RX 12 //(D7)
-#define BT_TX 13 //(D6)
-SoftwareSerial btSerial(BT_TX, BT_RX);
-#endif
+  #if HARDWARE_BT_SERIAL
+  #else
+    #define BT_RX 7
+    #define BT_TX 8
+    SoftwareSerial btSerial(BT_TX, BT_RX);
+  #endif
+#elif (MCU_TYPE == ESP8266Board)
+  #if HARDWARE_BT_SERIAL
+  #else
+    #define BT_RX 12 //(D7)
+    #define BT_TX 13 //(D6)
+    SoftwareSerial btSerial(BT_TX, BT_RX);
+  #endif
 #endif
 
-#if (MCU_TYPE == ESP8266)
-#define FASTLED_INTERRUPT_RETRY_COUNT 0
-#define FASTLED_ALLOW_INTERRUPTS 0
-#include <ESP8266WiFi.h>
-#endif
+
 
 
 /*------------------------------------------------------------------------------------------
@@ -204,7 +199,7 @@ void setup() {
   random16_set_seed(4832);                                                        // Awesome randomizer of awesomeness
   random16_add_entropy(analogRead(2));
 
-#if (MCU_TYPE == ESP8266)
+#if (MCU_TYPE == ESP8266Board)
   EEPROM.begin(255);
   delay(50);
 #endif
@@ -246,7 +241,7 @@ void setup() {
     meshdelay = INITDEL;
   }
   
-#if (MCU_TYPE == ESP8266)
+#if (MCU_TYPE == ESP8266Board)
   EEPROM.commit();
 #endif
 
@@ -282,7 +277,7 @@ void setup() {
     btSerial.begin(9600);
 #endif
 
-#if (MCU_TYPE == ESP8266)
+#if (MCU_TYPE == ESP8266Board)
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 #endif
 
@@ -369,7 +364,7 @@ void loop() {
     }
 #endif
 uint16_t effectDelay = thisdelay;
-#if (MCU_TYPE == ESP8266)
+#if (MCU_TYPE == ESP8266Board)
   effectDelay = thisdelay*2;
 #endif
     EVERY_N_MILLIS_I(thistimer, effectDelay) {                                    // Sets the original delay time.
@@ -391,7 +386,7 @@ uint16_t effectDelay = thisdelay;
 
 #if CHANGE_ON == 1
 uint16_t changeTime = CHANGE_TIME;
-#if (MCU_TYPE == ESP8266)
+#if (MCU_TYPE == ESP8266Board)
   changeTime = changeTime/2;
 #endif
     EVERY_N_MILLISECONDS(changeTime * 1000 / NUM_LEDS) {                      // Движение плавной смены эффектов

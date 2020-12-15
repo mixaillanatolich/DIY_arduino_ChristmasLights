@@ -29,9 +29,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #define ArduinoAVR 0  // AVR (Arduino NANO/MEGA/UNO)
-#define ESP8266 1     // ESP8266 (NodeMCU, Wemos D1)
+#define ESP8266Board 1     // ESP8266 (NodeMCU, Wemos D1)
 
-#define MCU_TYPE ESP8266
+#define MCU_TYPE ESP8266Board
 
 #define KOL_LED       20         // Сколько светодиодов в гирлянде при первом включении
 
@@ -59,7 +59,7 @@
 #if (MCU_TYPE == ArduinoAVR)
 #define LED_DT 6  
 #define BTN_PIN 3
-#elif (MCU_TYPE == ESP8266)
+#elif (MCU_TYPE == ESP8266Board)
 #define LED_DT 2   //(D4)
 #define BTN_PIN 14 //(D5)      
 #endif
@@ -120,4 +120,10 @@
 #else
 # define DBG_PRINT(...)
 # define DBG_PRINTLN(...)
+#endif
+
+#if (MCU_TYPE == ESP8266Board)
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
+#define FASTLED_ALLOW_INTERRUPTS 0
+#include <ESP8266WiFi.h>
 #endif

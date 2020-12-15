@@ -75,7 +75,7 @@ void SetMode(uint8_t modeId) {
 void bootme() {                                                 // This is used to reset all the Arduinos so that their millis() counters are all in sync.
 #if (MCU_TYPE == ArduinoAVR)
     asm volatile("jmp 0");
-#elif (MCU_TYPE == ESP8266)
+#elif (MCU_TYPE == ESP8266Board)
 
 #endif
 }
@@ -153,7 +153,9 @@ void handleControlCmd() {
         EEPROM.write(STRANDLEN,   (uint16_t)(NUM_LEDS) & 0x00ff);       //Сохранить в память
         EEPROM.write(STRANDLEN + 1, (uint16_t)(NUM_LEDS) >> 8);         //Сохранить в память
 #endif
+#if (MCU_TYPE == ESP8266Board)
         EEPROM.commit();
+#endif
         DBG_PRINT(F("Length Garland ")); DBG_PRINTLN(NUM_LEDS);
 
         break;
@@ -168,7 +170,10 @@ void handleControlCmd() {
         EEPROM.write(STRANDLEN,   (uint16_t)(NUM_LEDS) & 0x00ff);       //Сохранить в память
         EEPROM.write(STRANDLEN + 1, (uint16_t)(NUM_LEDS) >> 8);         //Сохранить в память
 #endif
+#if (MCU_TYPE == ESP8266Board)
         EEPROM.commit();
+#endif
+        
         DBG_PRINT(F("Length Garland ")); DBG_PRINTLN(NUM_LEDS);
 
         break;
@@ -226,7 +231,9 @@ void handleControlCmd() {
 
       case IR_Key_Save_Mode :              ///////////////////////////////////////////////////////////////////////////  Сохранить эффект как запускающийся первым
           EEPROM.write(STARTMODE, ledMode);
-          EEPROM.commit();
+#if (MCU_TYPE == ESP8266Board)
+        EEPROM.commit();
+#endif
           DBG_PRINTLN(F("Save Mode"));
         break;
 
@@ -234,7 +241,9 @@ void handleControlCmd() {
         demorun = 0; ledMode = 201;
         if (meshdelay > 0) meshdelay--;                                   //Новое значение
         EEPROM.write(STRANDEL, meshdelay);
+#if (MCU_TYPE == ESP8266Board)
         EEPROM.commit();
+#endif
         DBG_PRINT(F("Delay ")); DBG_PRINT(meshdelay * 100); DBG_PRINTLN(F(" ms"));
         break;
 
@@ -242,7 +251,9 @@ void handleControlCmd() {
         demorun = 0; ledMode = 201;
         if (meshdelay < 100) meshdelay++;                                 //Новое значение
         EEPROM.write(STRANDEL, meshdelay);
+#if (MCU_TYPE == ESP8266Board)
         EEPROM.commit();
+#endif
         DBG_PRINT(F("Delay ")); DBG_PRINT(meshdelay * 100); DBG_PRINTLN(F(" ms"));
         break;
 
