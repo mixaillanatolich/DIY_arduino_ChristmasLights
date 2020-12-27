@@ -76,7 +76,7 @@ void bootme() {                                                 // This is used 
 #if (MCU_TYPE == ArduinoAVR)
     asm volatile("jmp 0");
 #elif (MCU_TYPE == ESP8266Board)
-
+    ESP.reset();
 #endif
 }
 
